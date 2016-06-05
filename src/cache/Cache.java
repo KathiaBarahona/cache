@@ -67,7 +67,7 @@ public class Cache {
     }
     public static void initializeCache(Line [] Cache){
         for(int i = 0 ; i < 16; i++){
-            Cache[i] = new Line();
+            Cache[i] = new Line(i);
         }
     }
 }
