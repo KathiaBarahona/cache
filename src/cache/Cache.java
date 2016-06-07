@@ -4,18 +4,37 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Arrays;
 
-/**
- *
- * @author Agile 2016
- */
 public class Cache {
 
+    /*Global variables
+     k, TT(Total time), line for associative*/
+    public static final int n = 4096;
+    public static final int lines = 16;
+    public static final int k = 8;
+    public static double TT = 0;
+    public static int lineAssociative = 0;
 
     public static void main(String[] args) {
-        Line[] Cache = new Line[16];
-        int[] RAM = new int[4096];
-        fillRAM(RAM);//Reads integers.txt (file with 4096 binary numbers) Random Numbers between 0 and 255
-        initializeCache(Cache);//Initializes every line
+        Line[] Cache;
+        int[] RAM;
+        for (int i = 0; i < 4; i++) {
+            TT = 0;
+            RAM = new int[n];
+            Cache = new Line[lines];
+            fillRAM(RAM);//Reads datos.txt
+            initializeCache(Cache);//Initializes every line
+            sort(RAM, Cache, i);
+            if (i == 0) {
+                System.out.print("\nNo cache: \t");
+            } else if (i == 1) {
+                System.out.print("\nDirect: \t");
+            } else if (i == 2) {
+                System.out.print("\nAssociative: \t");
+            } else {
+                System.out.print("\nSet associative: ");
+            }
+            System.out.printf("\t%.2f\n", TT);
+        }
     }
 
     public static void fillRAM(int[] RAM) {
@@ -23,9 +42,9 @@ public class Cache {
         try {
             String currentLine;
             int i = 0;
-            br = new BufferedReader(new FileReader("integers.txt"));
+            br = new BufferedReader(new FileReader("datos.txt"));
             while ((currentLine = br.readLine()) != null) {
-                RAM[i] = Integer.parseInt(currentLine, 2);
+                RAM[i] = Integer.parseInt(currentLine);
                 i++;
             }
         } catch (Exception e) {

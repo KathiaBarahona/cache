@@ -12,6 +12,8 @@ public class Line {
     private boolean modified = false;
     private int tag;
     private int[] values = new int[8];
+    private int memoryStart;
+    private int memoryEnd;
 
     public Line() {
     }
@@ -21,6 +23,8 @@ public class Line {
         this.modified = modified;
         this.tag = tag;
         this.values = values;
+        this.memoryStart = 0;
+        this.memoryEnd = 0;
     }//Constructor for an existing line
 
     public Line(int tag) {
@@ -118,6 +122,10 @@ public class Line {
         this.valid = valid;
     }
 
+    public boolean isValid() {
+        return !(memoryStart == 0 && memoryEnd == 0);
+    }
+    
     @Override
     public String toString() {
         return "Line{" + "valid=" + valid + ", modified=" + modified + ", tag=" + tag + ", values=" + Arrays.toString(values) + '}';
