@@ -10,8 +10,10 @@ public class Line {
 
     private boolean valid = false;
     private boolean modified = false;
-    private int tag;
+    private int tag = -1;
     private int[] values = new int[8];
+    private int memoryStart;
+    private int memoryEnd;
 
     public Line() {
     }
@@ -21,6 +23,8 @@ public class Line {
         this.modified = modified;
         this.tag = tag;
         this.values = values;
+        this.memoryStart = 0;
+        this.memoryEnd = 0;
     }//Constructor for an existing line
 
     public Line(int tag) {
@@ -63,12 +67,32 @@ public class Line {
     public void setValues(int[] values) {
         this.values = values;
     }
+    public void setValue(int value, int position){
+        this.values[position] = value;
+    }
 
+    public int getMemoryStart() {
+        return memoryStart;
+    }
+
+    public void setMemoryStart(int memoryStart) {
+        this.memoryStart = memoryStart;
+    }
+
+    public int getMemoryEnd() {
+        return memoryEnd;
+    }
+
+    public void setMemoryEnd(int memoryEnd) {
+        this.memoryEnd = memoryEnd;
+    }
+    
     /**
      * Get the value of tag
      *
      * @return the value of tag
      */
+    
     public int getTag() {
         return tag;
     }
@@ -118,6 +142,10 @@ public class Line {
         this.valid = valid;
     }
 
+    public boolean isValid() {
+        return !(memoryStart == 0 && memoryEnd == 0);
+    }
+    
     @Override
     public String toString() {
         return "Line{" + "valid=" + valid + ", modified=" + modified + ", tag=" + tag + ", values=" + Arrays.toString(values) + '}';
