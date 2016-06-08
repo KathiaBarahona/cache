@@ -11,7 +11,7 @@ public class Cache {
     public static final int n = 4096;
     public static final int lines = 16;
     public static final int k = 8;
-    public static double TT = 0;
+    public static double TT;
     public static int lineAssociative = 0;
     public static Line[][] sets = new Line[4][4];
     public static int[] last_lines = new int[4];
@@ -23,26 +23,148 @@ public class Cache {
             TT = 0;
             RAM = new int[n];
             Cache = new Line[lines];
-            fillRAM(RAM);//Reads datos.txt
+            fillRAM(RAM);
+            initializeCache(Cache);
 
-            initializeCache(Cache);//Initializes every line
-            if (i == 3) {
-                buildSets(Cache);//Builds sets for Set associative
-            }
-            sort(RAM, Cache, i);
-
-            if (i == 0) {
-                System.out.print("\nNo cache: \t");
-            } else if (i == 1) {
-                System.out.print("\nDirect: \t");
-            } else if (i == 2) {
-                System.out.print("\nAssociative: \t");
-            } else {
-                System.out.print("\nSet associative: ");
-
+            switch (i) {
+                case 0:
+                    sort(RAM, Cache, 0);
+                    System.out.print("\nNo cache: \t");
+                    break;
+                case 1:
+                    sort(RAM, Cache, 1);
+                    System.out.print("\nDirect: \t");
+                    break;
+                case 2:
+                    sort(RAM, Cache, 2);
+                    System.out.print("\nAssociative: \t");
+                    break;
+                default:
+                    //Builds sets for Set associative
+                    buildSets(Cache);
+                    sort(RAM, Cache, i);
+                    System.out.print("\nSet associative: ");
+                    break;
             }
             System.out.printf("\t%.2f\n", TT);
         }
+    }
+
+    public static void fillRAM(int[] RAM) {
+        BufferedReader br = null;
+        try {
+            String currentLine;
+            int i = 0;
+            br = new BufferedReader(new FileReader("datos.txt"));
+            while ((currentLine = br.readLine()) != null) {
+                RAM[i] = Integer.parseInt(currentLine);
+                i++;
+            }
+        } catch (Exception e) {
+            //System.out.println(e);
+        }
+    }
+
+    public static void initializeCache(Line[] Cache) {
+        for (int i = 0; i < 16; i++) {
+            Cache[i] = new Line();
+        }
+    }
+
+    public static void sort(int[] RAM, Line[] Cache, int type) {
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+
+                if (read(i, RAM, Cache, type) > read(j, RAM, Cache, type)) {
+                    int temp = read(i, RAM, Cache, type);
+                    write(i, RAM, Cache, type, read(j, RAM, Cache, type));
+                    write(j, RAM, Cache, type, temp);
+
+                }
+            }
+        }
+    }
+
+    public static int read(int address, int[] RAM, Line[] Cache, int type) {
+        switch (type) {
+            case 0:
+                return readNoCache(address, RAM, Cache);
+            case 1:
+                return readDirect(address, RAM, Cache);
+            case 2:
+                return readAssociative(address, RAM, Cache);
+            case 3:
+                return readSets(address, RAM);
+            default:
+                break;
+        }
+        return 0;
+
+    }
+
+    public static int readNoCache(int address, int[] RAM, Line[] Cache){
+        TT += 0.1;
+        return RAM[address];
+    }
+            
+    public static int readDirect(int address, int[] RAM, Line[] Cache) {
+
+        int line = (address / k) % lines;
+
+        if (Cache[line].isValid()) {
+            if (address >= Cache[line].getMemoryStart() && address <= Cache[line].getMemoryEnd()) {
+                TT += 0.01;
+                return RAM[address];
+            } else if (Cache[line].getModified()) {
+                Cache[line].setMemoryStart(address);
+                Cache[line].setMemoryEnd(Cache[line].getMemoryStart() + k - 1);
+                Cache[line].setModified(false);
+                TT += 0.22;
+                return RAM[address];
+            } else {
+                Cache[line].setMemoryStart(address);
+                Cache[line].setMemoryEnd(Cache[line].getMemoryStart() + k - 1);
+                Cache[line].setModified(false);
+                TT += 0.11;
+                return RAM[address];
+            }
+        } else {
+            Cache[line].setMemoryStart(address);
+            Cache[line].setMemoryEnd(Cache[line].getMemoryStart() + k - 1);
+            Cache[line].setModified(false);
+            TT += 0.11;
+            return RAM[address];
+        }
+    }
+
+    public static int readAssociative(int address, int[] RAM, Line[] Cache) {
+        int tag = address / k;
+        for (int i = 0; i < Cache.length; i++) {
+            if (Cache[i].isValid()) {
+                if (address >= Cache[i].getMemoryStart() && address <= Cache[i].getMemoryEnd()) {
+                    TT += 0.01;
+                    return RAM[address];
+                }
+            }
+        }
+
+        if (Cache[lineAssociative].isValid()) {
+            if (Cache[lineAssociative].getModified()) {
+                TT += 0.22;
+            } else {
+                TT += 0.11;
+            }
+        } else {
+            TT += 0.11;
+        }
+        Cache[lineAssociative].setMemoryStart(tag * k);
+        Cache[lineAssociative].setMemoryEnd(Cache[lineAssociative].getMemoryStart() + k - 1);
+        Cache[lineAssociative].setModified(false);
+        lineAssociative++;
+        if (lineAssociative >= lines) {
+            lineAssociative = 0;
+        }
+        return RAM[address];
     }
 
     public static void buildSets(Line[] Cache) {
@@ -59,53 +181,6 @@ public class Cache {
             last_lines[i] = 0;
             count += 4;
         }
-
-    }
-
-    public static void fillRAM(int[] RAM) {
-        BufferedReader br = null;
-        try {
-            String currentLine;
-            int i = 0;
-            br = new BufferedReader(new FileReader("datos.txt"));
-            while ((currentLine = br.readLine()) != null) {
-                RAM[i] = Integer.parseInt(currentLine);
-                i++;
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
-    public static void sort(int[] RAM, Line[] Cache, int type) {
-        int n = 4096;
-        for (int i = 0; i < n-2; i++) {
-            for (int j = i + 1; j < n-1; j++) {
-   
-                if (read(i, RAM, Cache, type) > read(j, RAM, Cache, type)) {
-                    int temp = read(i, RAM, Cache, type);
-                    write(i, RAM, Cache, type, read(j, RAM, Cache, type));
-                    write(j, RAM, Cache, type, temp);
-          
-                }
-            }
-        }
-    }
-
-    public static int read(int address, int[] RAM, Line[] Cache, int type) {
-        switch (type) {
-            case 0:
-                break;//Method for no cache
-            case 1:
-                break;//Method for direct
-            case 2:
-                break;//Method for associative
-            case 3:
-                return readSets(address, RAM);
-            default:
-                break;
-        }
-        return 0;
 
     }
 
@@ -164,17 +239,88 @@ public class Cache {
     public static void write(int address, int[] RAM, Line[] Cache, int type, int value) {
         switch (type) {
             case 0:
+                writeNoCache(address, RAM, Cache, value);
                 break;//Method for no cache
             case 1:
-                break;//Method for direct
+                writeDirect(address, RAM, Cache, value);
+                break;
             case 2:
-                break;//Method for associative
+                writeAssociative(address, RAM, Cache, value);
+                break;
             case 3:
                 writeSets(address, RAM, value);
-                break;//Method for set associative
+                break;
             default:
                 break;
         }
+    }
+
+    public static void writeNoCache(int address, int[] RAM, Line[] Cache, int value){
+        TT += 0.1;
+        RAM[address] = value;
+    }
+    
+    public static void writeDirect(int address, int[] RAM, Line[] Cache, int value) {
+        int line = (address / k) % lines;
+
+        if (Cache[line].isValid()) {
+            if (address >= Cache[line].getMemoryStart() && address <= Cache[line].getMemoryEnd()) {
+                TT += 0.01;
+                Cache[line].setModified(true);
+                RAM[address] = value;
+            } else if (Cache[line].getModified()) {
+                Cache[line].setMemoryStart((address / k) * k);
+                Cache[line].setMemoryEnd(Cache[line].getMemoryStart() + k - 1);
+                Cache[line].setModified(true);
+                TT += 0.22;
+                RAM[address] = value;
+            } else {
+                Cache[line].setMemoryStart((address / k) * k);
+                Cache[line].setMemoryEnd(Cache[line].getMemoryStart() + k - 1);
+                Cache[line].setModified(true);
+                TT += 0.11;
+                RAM[address] = value;
+            }
+        } else {
+            Cache[line].setMemoryStart((address / k) * k);
+            Cache[line].setMemoryEnd(Cache[line].getMemoryStart() + k - 1);
+            Cache[line].setModified(true);
+            TT += 0.11;
+            RAM[address] = value;
+        }
+    }
+
+    public static void writeAssociative(int address, int[] RAM, Line[] Cache, int value) {
+        for (int i = 0; i < Cache.length; i++) {
+            if (Cache[i].isValid()) {
+                if (address >= Cache[i].getMemoryStart() && address <= Cache[i].getMemoryEnd()) {
+                    TT += 0.01;
+                    RAM[address] = value;
+                    Cache[i].setModified(true);
+                    return;
+                }
+            }
+        }
+
+        if (Cache[lineAssociative].isValid()) {
+            if (Cache[lineAssociative].getModified()) {
+                TT += 0.22;
+            } else {
+                TT += 0.11;
+            }
+        } else {
+            TT += 0.11;
+        }
+        int b = address / k;
+        Cache[lineAssociative].setMemoryStart(b * k);
+        Cache[lineAssociative].setMemoryEnd(Cache[lineAssociative].getMemoryStart() + k - 1);
+        Cache[lineAssociative].setModified(true);
+        lineAssociative++;
+
+        if (lineAssociative >= lines) {
+            lineAssociative = 0;
+        }
+        RAM[address] = value;
     }
 
     public static void writeSets(int address, int[] RAM, int value) {
@@ -184,7 +330,7 @@ public class Cache {
         int tag = block / 8;
         boolean flag = false;
         for (int i = 0; i < sets[set].length; i++) {
-            if (sets[set][i].isValid() && sets[set][i].getTag() == tag ) {
+            if (sets[set][i].isValid() && sets[set][i].getTag() == tag) {
                 sets[set][i].setModified(true);
                 sets[set][i].setValue(value, word);
                 TT += 0.01;
@@ -224,11 +370,5 @@ public class Cache {
 
         }
 
-    }
-
-    public static void initializeCache(Line[] Cache) {
-        for (int i = 0; i < 16; i++) {
-            Cache[i] = new Line();
-        }
     }
 }
