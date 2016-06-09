@@ -30,13 +30,16 @@ public class Cache {
                 case 0:
                     sort(RAM, Cache, 0);
                     System.out.print("\nNo cache: \t");
+                   
                     break;
                 case 1:
                     sort(RAM, Cache, 1);
                     System.out.print("\nDirect: \t");
+                   
                     break;
                 case 2:
                     sort(RAM, Cache, 2);
+                   
                     System.out.print("\nAssociative: \t");
                     break;
                 default:
@@ -44,6 +47,7 @@ public class Cache {
                     buildSets(Cache);
                     sort(RAM, Cache, i);
                     System.out.print("\nSet associative: ");
+               
                     break;
             }
             System.out.printf("\t%.2f\n", TT);
@@ -185,15 +189,15 @@ public class Cache {
     }
 
     public static int readSets(int address, int[] RAM) {
-        int block = address / 8;
-        int word = address % 8;
+        int block = address / k;
+        int word = address % k;
         int set = block % 4;
-        int tag = block / 8;
+        int tag = block / 4;
         int val = -1;
 
         for (int i = 0; i < sets[set].length; i++) {
 
-            if (sets[set][i].isValid() && sets[set][i].getTag() == tag) {
+            if (sets[set][i].getTag() == tag) {
                 val = sets[set][i].getValue(word);
                 TT += 0.01;
                 break;
@@ -327,7 +331,7 @@ public class Cache {
         int block = address / 8;
         int word = address % 8;
         int set = block % 4;
-        int tag = block / 8;
+        int tag = block / 4;
         boolean flag = false;
         for (int i = 0; i < sets[set].length; i++) {
             if (sets[set][i].isValid() && sets[set][i].getTag() == tag) {
